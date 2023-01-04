@@ -18,6 +18,10 @@ using System.Text;
 using Azure;
 using System.Runtime.InteropServices;
 using System;
+using PdfSharp.Fonts;
+using System.Reflection;
+using static System.Net.Mime.MediaTypeNames;
+using System.Drawing;
 
 namespace GreenSheetCreator
 {
@@ -28,12 +32,14 @@ namespace GreenSheetCreator
         public CreateGreenSheet(ILogger<CreateGreenSheet> log)
         {
             _logger = log;
+            
         }
 
         [FunctionName("GreenSheetCreate")]
         [OpenApiOperation(operationId: "Run", tags: new[] { "GreenSheetCreate" })]
         [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Query)]
         [OpenApiParameter(name: "shipmentType", In = ParameterLocation.Query, Required = true, Type = typeof(string), Description = "The **ShipmentType** parameter")]
+        [OpenApiParameter(name: "shipmentTypeName", In = ParameterLocation.Query, Required = true, Type = typeof(string), Description = "The **shipmentTypeName** parameter")]
         [OpenApiParameter(name: "accountNumber", In = ParameterLocation.Query, Required = true, Type = typeof(string), Description = "The **accountNumber** parameter")]
         [OpenApiParameter(name: "recivedDate", In = ParameterLocation.Query, Required = true, Type = typeof(string), Description = "MM/DD/YY")]
         [OpenApiParameter(name: "creatorInitials", In = ParameterLocation.Query, Required = true, Type = typeof(string), Description = "The **MDR** parameter")]
@@ -55,8 +61,9 @@ namespace GreenSheetCreator
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
-
+            MyFontResolver.Apply();
             string shipmenType = req.Query["shipmentType"];
+            string shipmentTypeName = req.Query["shipmentTypeName"];
             string accountNumber = req.Query["accountNumber"];
             string recivedDate = req.Query["recivedDate"];
             string creatorInitials = req.Query["creatorInitials"];
@@ -74,6 +81,7 @@ namespace GreenSheetCreator
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             dynamic data = JsonConvert.DeserializeObject(requestBody);
             shipmenType = shipmenType ?? data?.shipmenType;
+            shipmentTypeName = shipmentTypeName ?? data?.shipmentTypeName;
             accountNumber = accountNumber ?? data?.accountNumber;
             recivedDate = recivedDate ?? data?.recivedDate;
             creatorInitials = creatorInitials ?? data?.creatorInitials;
@@ -94,9 +102,11 @@ namespace GreenSheetCreator
             XGraphics gfx = XGraphics.FromPdfPage(page);
             XFont font = new XFont("Arial", 18);
             XFont fontSmall = new XFont("Arial", 8);
+            XFont fontMedBold = new XFont("Arial", 12,XFontStyle.Bold);
             XFont fontBold = new XFont("Arial", 70, XFontStyle.Bold);
             XFont fontBoldSmall = new XFont("Arial", 18, XFontStyle.Bold);
-            XFont BarcodeFont = new XFont("ZebraBarcode", 40, XFontStyle.Regular);
+            
+            XFont BarcodeFont = new XFont("fre3of9x", 60);
 
             
 
@@ -122,13 +132,27 @@ namespace GreenSheetCreator
             gfx.DrawString(cartons + " CARTONS", font, XBrushes.Black, new XPoint(350, 335));
 
             gfx.DrawString("TYPE", fontBoldSmall, XBrushes.Black, new XPoint(70, 375));
+            gfx.DrawString("LOCATION", fontBoldSmall, XBrushes.Black, new XPoint(180, 375));
 
-            gfx.DrawString(shipmentNumber, BarcodeFont, XBrushes.Black, new XPoint(70, 500));
+            gfx.DrawString("*" + shipmentNumber + "*", BarcodeFont, XBrushes.Black, new XPoint(40, 500));
+            gfx.DrawString(shipmentNumber , font, XBrushes.Black, new XPoint(120, 520));
+            gfx.DrawString("NOTES:", font, XBrushes.Black, new XPoint(40, 570));
 
+            var rectangleType = new XRect(40, 375, 120, 50);
 
-            var brush = new XSolidBrush(XColor.FromArgb(0, 255, 240, 115));
             var pen = new XPen(XColors.Black, 1) { DashStyle = XDashStyle.Solid };
 
+            var brush = new XSolidBrush(XColor.FromArgb(0, 255, 240, 115));
+
+            gfx.DrawRectangle(brush, rectangleType);
+            gfx.DrawRectangle(pen, rectangleType);
+            gfx.DrawString(shipmentTypeName, fontMedBold, XBrushes.Black, rectangleType, XStringFormats.Center);
+
+            var rectangleLoc = new XRect(160, 375, 145, 50);
+
+            gfx.DrawRectangle(brush, rectangleLoc);
+            gfx.DrawRectangle(pen, rectangleLoc);
+            gfx.DrawString("", fontMedBold, XBrushes.Black, rectangleLoc, XStringFormats.Center);
 
             string dateNow = DateTime.Now.ToString("yyyyMMddHHmmss");
             string fileName = dateNow + "_" + shipmentNumber + ".pdf";
@@ -141,7 +165,8 @@ namespace GreenSheetCreator
                 ms.Position = 0;
                 blob.Upload(ms);
             }
-            //document.Save("C:\\GreenSheetTest\\" + dateNow + "_" + shipmentNumber + ".pdf");
+
+            document.Save("C:\\GreenSheetTest\\GreenSheetTest.pdf");
 
 
             string responseMessage = string.IsNullOrEmpty(fileName)
@@ -153,11 +178,130 @@ namespace GreenSheetCreator
         }
 
 
+
+
         private Task<string> GetStorageConnectionString()
         {
             var storageConnectionString = "DefaultEndpointsProtocol=https;AccountName=stcoreqa;AccountKey=iVbr9tFhr45Dzo2+nLpGRhS/h8shgXd8AZXb8qJAsx9RosnGc+JnjPrQ6Mb2XjWXc+mvdq94NOkjLLuhUoaVYg==;BlobEndpoint=https://stcoreqa.blob.core.windows.net/;TableEndpoint=https://stcoreqa.table.core.windows.net/;QueueEndpoint=https://stcoreqa.queue.core.windows.net/;FileEndpoint=https://stcoreqa.file.core.windows.net/";
 
             return Task.FromResult(storageConnectionString);
+        }
+    }
+
+    class MyFontResolver : IFontResolver
+    {
+        public FontResolverInfo ResolveTypeface(string familyName, bool isBold, bool isItalic)
+        {
+            // Ignore case of font names.
+            var name = familyName.ToLower().TrimEnd('#');
+
+            // Deal with the fonts we know.
+            switch (name)
+            {
+                case "fre3of9x":
+                    if (isBold)
+                    {
+                        if (isItalic)
+                            return new FontResolverInfo("fre3of9x#bi");
+                        return new FontResolverInfo("fre3of9x#b");
+                    }
+                    if (isItalic)
+                        return new FontResolverInfo("fre3of9x#i");
+                    return new FontResolverInfo("fre3of9x#");
+            }
+
+            // We pass all other font requests to the default handler.
+            // When running on a web server without sufficient permission, you can return a default font at this stage.
+            return PlatformFontResolver.ResolveTypeface(familyName, isBold, isItalic);
+        }
+
+        /// <summary>
+        /// Return the font data for the fonts.
+        /// </summary>
+        public byte[] GetFont(string faceName)
+        {
+            switch (faceName)
+            {
+                case "fre3of9x#":
+                    return FontHelper.fre3of9x;
+
+                case "fre3of9x#b":
+                    return FontHelper.fre3of9x;
+
+                case "fre3of9x#i":
+                    return FontHelper.fre3of9x;
+
+                case "fre3of9x#bi":
+                    return FontHelper.fre3of9x;
+            }
+
+            return null;
+        }
+
+
+        internal static MyFontResolver OurGlobalFontResolver = null;
+
+        /// <summary>
+        /// Ensure the font resolver is only applied once (or an exception is thrown)
+        /// </summary>
+        internal static void Apply()
+        {
+            if (OurGlobalFontResolver == null || GlobalFontSettings.FontResolver == null)
+            {
+                if (OurGlobalFontResolver == null)
+                    OurGlobalFontResolver = new MyFontResolver();
+
+                GlobalFontSettings.FontResolver = OurGlobalFontResolver;
+            }
+        }
+    }
+
+
+    /// <summary>
+    /// Helper class that reads font data from embedded resources.
+    /// </summary>
+    public static class FontHelper
+    {
+        public static byte[] fre3of9x
+        {
+            get { return LoadFontData("GreenSheetCreator.Fonts.fre3of9x.ttf"); }
+        }
+
+        public static byte[] fre3of9xBold
+        {
+            get { return LoadFontData("GreenSheetCreator.Fonts.fre3of9x.ttf"); }
+        }
+
+        public static byte[] fre3of9xItalic
+        {
+            get { return LoadFontData("GreenSheetCreator.Fonts.fre3of9x.ttf"); }
+        }
+
+        public static byte[] fre3of9xlBoldItalic
+        {
+            get { return LoadFontData("GreenSheetCreator.Fonts.fre3of9x.ttf"); }
+        }
+
+        /// <summary>
+        /// Returns the specified font from an embedded resource.
+        /// </summary>
+        static byte[] LoadFontData(string name)
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+
+            // Test code to find the names of embedded fonts
+            //var ourResources = assembly.GetManifestResourceNames();
+
+            using (Stream stream = assembly.GetManifestResourceStream(name))
+            {
+                if (stream == null)
+                    throw new ArgumentException("No resource with name " + name);
+
+                int count = (int)stream.Length;
+                byte[] data = new byte[count];
+                stream.Read(data, 0, count);
+                return data;
+            }
         }
     }
 }
