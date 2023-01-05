@@ -22,6 +22,7 @@ using PdfSharp.Fonts;
 using System.Reflection;
 using static System.Net.Mime.MediaTypeNames;
 using System.Drawing;
+using Azure.Security.KeyVault.Secrets;
 
 namespace GreenSheetCreator
 {
@@ -156,8 +157,8 @@ namespace GreenSheetCreator
 
             string dateNow = DateTime.Now.ToString("yyyyMMddHHmmss");
             string fileName = dateNow + "_" + shipmentNumber + ".pdf";
-            string connectionString = await GetStorageConnectionString();
-            BlobContainerClient client = new BlobContainerClient(connectionString, "greensheet-qa");
+            string connectionString = Environment.GetEnvironmentVariable("BlobStorge");
+            BlobContainerClient client = new BlobContainerClient(connectionString, Environment.GetEnvironmentVariable("BlobContainer"));
             var blob = client.GetBlobClient(fileName);
             using (MemoryStream ms = new MemoryStream())
             {
@@ -178,14 +179,6 @@ namespace GreenSheetCreator
         }
 
 
-
-
-        private Task<string> GetStorageConnectionString()
-        {
-            var storageConnectionString = "DefaultEndpointsProtocol=https;AccountName=stcoreqa;AccountKey=iVbr9tFhr45Dzo2+nLpGRhS/h8shgXd8AZXb8qJAsx9RosnGc+JnjPrQ6Mb2XjWXc+mvdq94NOkjLLuhUoaVYg==;BlobEndpoint=https://stcoreqa.blob.core.windows.net/;TableEndpoint=https://stcoreqa.table.core.windows.net/;QueueEndpoint=https://stcoreqa.queue.core.windows.net/;FileEndpoint=https://stcoreqa.file.core.windows.net/";
-
-            return Task.FromResult(storageConnectionString);
-        }
     }
 
     class MyFontResolver : IFontResolver
