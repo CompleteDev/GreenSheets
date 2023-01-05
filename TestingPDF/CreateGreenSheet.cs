@@ -167,7 +167,7 @@ namespace GreenSheetCreator
                 blob.Upload(ms);
             }
 
-            document.Save("C:\\GreenSheetTest\\GreenSheetTest.pdf");
+            //document.Save("C:\\GreenSheetTest\\GreenSheetTest.pdf");
 
 
             string responseMessage = string.IsNullOrEmpty(fileName)
