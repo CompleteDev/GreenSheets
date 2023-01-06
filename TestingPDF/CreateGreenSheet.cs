@@ -63,7 +63,8 @@ namespace GreenSheetCreator
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
             MyFontResolver.Apply();
-            string shipmenType = req.Query["shipmentType"];
+
+            string shipmentType = req.Query["shipmentType"];
             string shipmentTypeName = req.Query["shipmentTypeName"];
             string accountNumber = req.Query["accountNumber"];
             string recivedDate = req.Query["recivedDate"];
@@ -81,7 +82,7 @@ namespace GreenSheetCreator
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             dynamic data = JsonConvert.DeserializeObject(requestBody);
-            shipmenType = shipmenType ?? data?.shipmenType;
+            shipmentType = shipmentType ?? data?.shipmentType;
             shipmentTypeName = shipmentTypeName ?? data?.shipmentTypeName;
             accountNumber = accountNumber ?? data?.accountNumber;
             recivedDate = recivedDate ?? data?.recivedDate;
@@ -103,15 +104,14 @@ namespace GreenSheetCreator
             XGraphics gfx = XGraphics.FromPdfPage(page);
             XFont font = new XFont("Arial", 18);
             XFont fontSmall = new XFont("Arial", 8);
-            XFont fontMedBold = new XFont("Arial", 12,XFontStyle.Bold);
             XFont fontBold = new XFont("Arial", 70, XFontStyle.Bold);
             XFont fontBoldSmall = new XFont("Arial", 18, XFontStyle.Bold);
-            
+
             XFont BarcodeFont = new XFont("fre3of9x", 60);
 
             
 
-            gfx.DrawString(shipmenType, fontBold, XBrushes.Black, new XPoint(475, 70));
+            gfx.DrawString(shipmentType, fontBold, XBrushes.Black, new XPoint(475, 70));
 
             gfx.DrawString("Date: ___________________", font, XBrushes.Black, new XPoint(125, 35));
             gfx.DrawString("Primary Table #: ___________________", font, XBrushes.Black, new XPoint(40, 70));
@@ -132,28 +132,9 @@ namespace GreenSheetCreator
             gfx.DrawString(pallets + " PALLETS", font, XBrushes.Black, new XPoint(350, 320));
             gfx.DrawString(cartons + " CARTONS", font, XBrushes.Black, new XPoint(350, 335));
 
-            gfx.DrawString("TYPE", fontBoldSmall, XBrushes.Black, new XPoint(70, 375));
-            gfx.DrawString("LOCATION", fontBoldSmall, XBrushes.Black, new XPoint(180, 375));
-
             gfx.DrawString("*" + shipmentNumber + "*", BarcodeFont, XBrushes.Black, new XPoint(40, 500));
             gfx.DrawString(shipmentNumber , font, XBrushes.Black, new XPoint(120, 520));
             gfx.DrawString("NOTES:", font, XBrushes.Black, new XPoint(40, 570));
-
-            var rectangleType = new XRect(40, 375, 120, 50);
-
-            var pen = new XPen(XColors.Black, 1) { DashStyle = XDashStyle.Solid };
-
-            var brush = new XSolidBrush(XColor.FromArgb(0, 255, 240, 115));
-
-            gfx.DrawRectangle(brush, rectangleType);
-            gfx.DrawRectangle(pen, rectangleType);
-            gfx.DrawString(shipmentTypeName, fontMedBold, XBrushes.Black, rectangleType, XStringFormats.Center);
-
-            var rectangleLoc = new XRect(160, 375, 145, 50);
-
-            gfx.DrawRectangle(brush, rectangleLoc);
-            gfx.DrawRectangle(pen, rectangleLoc);
-            gfx.DrawString("", fontMedBold, XBrushes.Black, rectangleLoc, XStringFormats.Center);
 
             string dateNow = DateTime.Now.ToString("yyyyMMddHHmmss");
             string fileName = dateNow + "_" + shipmentNumber + ".pdf";
@@ -181,8 +162,10 @@ namespace GreenSheetCreator
 
     }
 
+
     class MyFontResolver : IFontResolver
     {
+
         public FontResolverInfo ResolveTypeface(string familyName, bool isBold, bool isItalic)
         {
             // Ignore case of font names.
@@ -192,15 +175,13 @@ namespace GreenSheetCreator
             switch (name)
             {
                 case "fre3of9x":
+                    return new FontResolverInfo("fre3of9x#");
+                case "arial":
                     if (isBold)
                     {
-                        if (isItalic)
-                            return new FontResolverInfo("fre3of9x#bi");
-                        return new FontResolverInfo("fre3of9x#b");
+                        return new FontResolverInfo("Arial#b");
                     }
-                    if (isItalic)
-                        return new FontResolverInfo("fre3of9x#i");
-                    return new FontResolverInfo("fre3of9x#");
+                    return new FontResolverInfo("Arial#");
             }
 
             // We pass all other font requests to the default handler.
@@ -217,15 +198,12 @@ namespace GreenSheetCreator
             {
                 case "fre3of9x#":
                     return FontHelper.fre3of9x;
+                case "Arial#":
+                    return FontHelper.Arial;
 
-                case "fre3of9x#b":
-                    return FontHelper.fre3of9x;
+                case "Arial#b":
+                    return FontHelper.arialbd;
 
-                case "fre3of9x#i":
-                    return FontHelper.fre3of9x;
-
-                case "fre3of9x#bi":
-                    return FontHelper.fre3of9x;
             }
 
             return null;
@@ -260,19 +238,13 @@ namespace GreenSheetCreator
             get { return LoadFontData("GreenSheetCreator.Fonts.fre3of9x.ttf"); }
         }
 
-        public static byte[] fre3of9xBold
+        public static byte[] Arial
         {
-            get { return LoadFontData("GreenSheetCreator.Fonts.fre3of9x.ttf"); }
+            get { return LoadFontData("GreenSheetCreator.Fonts.Arial.ttf"); }
         }
-
-        public static byte[] fre3of9xItalic
+        public static byte[] arialbd
         {
-            get { return LoadFontData("GreenSheetCreator.Fonts.fre3of9x.ttf"); }
-        }
-
-        public static byte[] fre3of9xlBoldItalic
-        {
-            get { return LoadFontData("GreenSheetCreator.Fonts.fre3of9x.ttf"); }
+            get { return LoadFontData("GreenSheetCreator.Fonts.arialbd.ttf"); }
         }
 
         /// <summary>
@@ -297,5 +269,6 @@ namespace GreenSheetCreator
             }
         }
     }
+
 }
 
