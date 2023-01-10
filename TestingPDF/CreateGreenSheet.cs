@@ -10,14 +10,11 @@ using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Enums;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
-using PdfSharp.Drawing.Layout;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 using Azure.Storage.Blobs;
-using System.Text;
-using Azure;
-using System.Runtime.InteropServices;
 using System;
+
 
 namespace GreenSheetCreator
 {
@@ -28,12 +25,14 @@ namespace GreenSheetCreator
         public CreateGreenSheet(ILogger<CreateGreenSheet> log)
         {
             _logger = log;
+            
         }
 
         [FunctionName("GreenSheetCreate")]
         [OpenApiOperation(operationId: "Run", tags: new[] { "GreenSheetCreate" })]
         [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Query)]
         [OpenApiParameter(name: "shipmentType", In = ParameterLocation.Query, Required = true, Type = typeof(string), Description = "The **ShipmentType** parameter")]
+        [OpenApiParameter(name: "shipmentTypeName", In = ParameterLocation.Query, Required = true, Type = typeof(string), Description = "The **shipmentTypeName** parameter")]
         [OpenApiParameter(name: "accountNumber", In = ParameterLocation.Query, Required = true, Type = typeof(string), Description = "The **accountNumber** parameter")]
         [OpenApiParameter(name: "recivedDate", In = ParameterLocation.Query, Required = true, Type = typeof(string), Description = "MM/DD/YY")]
         [OpenApiParameter(name: "creatorInitials", In = ParameterLocation.Query, Required = true, Type = typeof(string), Description = "The **MDR** parameter")]
@@ -55,8 +54,10 @@ namespace GreenSheetCreator
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
+            MyFontResolver.Apply();
 
-            string shipmenType = req.Query["shipmentType"];
+            string shipmentType = req.Query["shipmentType"];
+            string shipmentTypeName = req.Query["shipmentTypeName"];
             string accountNumber = req.Query["accountNumber"];
             string recivedDate = req.Query["recivedDate"];
             string creatorInitials = req.Query["creatorInitials"];
@@ -73,7 +74,8 @@ namespace GreenSheetCreator
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             dynamic data = JsonConvert.DeserializeObject(requestBody);
-            shipmenType = shipmenType ?? data?.shipmenType;
+            shipmentType = shipmentType ?? data?.shipmentType;
+            shipmentTypeName = shipmentTypeName ?? data?.shipmentTypeName;
             accountNumber = accountNumber ?? data?.accountNumber;
             recivedDate = recivedDate ?? data?.recivedDate;
             creatorInitials = creatorInitials ?? data?.creatorInitials;
@@ -96,11 +98,12 @@ namespace GreenSheetCreator
             XFont fontSmall = new XFont("Arial", 8);
             XFont fontBold = new XFont("Arial", 70, XFontStyle.Bold);
             XFont fontBoldSmall = new XFont("Arial", 18, XFontStyle.Bold);
-            XFont BarcodeFont = new XFont("ZebraBarcode", 40, XFontStyle.Regular);
+
+            XFont BarcodeFont = new XFont("fre3of9x", 60);
 
             
 
-            gfx.DrawString(shipmenType, fontBold, XBrushes.Black, new XPoint(475, 70));
+            gfx.DrawString(shipmentType, fontBold, XBrushes.Black, new XPoint(475, 70));
 
             gfx.DrawString("Date: ___________________", font, XBrushes.Black, new XPoint(125, 35));
             gfx.DrawString("Primary Table #: ___________________", font, XBrushes.Black, new XPoint(40, 70));
@@ -121,19 +124,14 @@ namespace GreenSheetCreator
             gfx.DrawString(pallets + " PALLETS", font, XBrushes.Black, new XPoint(350, 320));
             gfx.DrawString(cartons + " CARTONS", font, XBrushes.Black, new XPoint(350, 335));
 
-            gfx.DrawString("TYPE", fontBoldSmall, XBrushes.Black, new XPoint(70, 375));
-
-            gfx.DrawString(shipmentNumber, BarcodeFont, XBrushes.Black, new XPoint(70, 500));
-
-
-            var brush = new XSolidBrush(XColor.FromArgb(0, 255, 240, 115));
-            var pen = new XPen(XColors.Black, 1) { DashStyle = XDashStyle.Solid };
-
+            gfx.DrawString("*" + shipmentNumber + "*", BarcodeFont, XBrushes.Black, new XPoint(40, 500));
+            gfx.DrawString(shipmentNumber , font, XBrushes.Black, new XPoint(120, 520));
+            gfx.DrawString("NOTES:", font, XBrushes.Black, new XPoint(40, 570));
 
             string dateNow = DateTime.Now.ToString("yyyyMMddHHmmss");
             string fileName = dateNow + "_" + shipmentNumber + ".pdf";
-            string connectionString = await GetStorageConnectionString();
-            BlobContainerClient client = new BlobContainerClient(connectionString, "greensheet-qa");
+            string connectionString = Environment.GetEnvironmentVariable("BlobStorge");
+            BlobContainerClient client = new BlobContainerClient(connectionString, Environment.GetEnvironmentVariable("BlobContainer"));
             var blob = client.GetBlobClient(fileName);
             using (MemoryStream ms = new MemoryStream())
             {
@@ -141,7 +139,8 @@ namespace GreenSheetCreator
                 ms.Position = 0;
                 blob.Upload(ms);
             }
-            //document.Save("C:\\GreenSheetTest\\" + dateNow + "_" + shipmentNumber + ".pdf");
+
+            //document.Save("C:\\GreenSheetTest\\GreenSheetTest.pdf");
 
 
             string responseMessage = string.IsNullOrEmpty(fileName)
@@ -153,12 +152,7 @@ namespace GreenSheetCreator
         }
 
 
-        private Task<string> GetStorageConnectionString()
-        {
-            var storageConnectionString = "DefaultEndpointsProtocol=https;AccountName=stcoreqa;AccountKey=iVbr9tFhr45Dzo2+nLpGRhS/h8shgXd8AZXb8qJAsx9RosnGc+JnjPrQ6Mb2XjWXc+mvdq94NOkjLLuhUoaVYg==;BlobEndpoint=https://stcoreqa.blob.core.windows.net/;TableEndpoint=https://stcoreqa.table.core.windows.net/;QueueEndpoint=https://stcoreqa.queue.core.windows.net/;FileEndpoint=https://stcoreqa.file.core.windows.net/";
+    }   
 
-            return Task.FromResult(storageConnectionString);
-        }
-    }
 }
 
