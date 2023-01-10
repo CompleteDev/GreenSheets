@@ -4,14 +4,30 @@
     <AzureFunctionsVersion>v4</AzureFunctionsVersion>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Fonts\arial.ttf" />
+    <None Remove="Fonts\arialbd.ttf" />
+    <None Remove="Fonts\arialbi.ttf" />
+    <None Remove="Fonts\ariali.ttf" />
+    <None Remove="Fonts\ARIALN.TTF" />
+    <None Remove="Fonts\ARIALNB.TTF" />
+    <None Remove="Fonts\ARIALNBI.TTF" />
+    <None Remove="Fonts\ARIALNI.TTF" />
+    <None Remove="Fonts\ariblk.ttf" />
     <None Remove="Fonts\fre3of9x.ttf" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Fonts\Arial.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Fonts\arialbd.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
     <EmbeddedResource Include="Fonts\fre3of9x.ttf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.4.0" />
     <PackageReference Include="Azure.Storage.Blobs.Batch" Version="12.11.0" />
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.OpenApi" Version="1.0.0" />
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="4.1.1" />
