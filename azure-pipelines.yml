@@ -37,7 +37,6 @@ steps:
 - task: DotNetCoreCLI@2
   inputs:
     command: 'publish'
-    publishWebProjects: True
     projects: '$(azureFunctionApp)'
     arguments: '-v minimal -c $(buildConfiguration) --no-restore --output $(Build.ArtifactStagingDirectory)'
 
