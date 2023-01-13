@@ -32,13 +32,15 @@ steps:
   inputs:
     command: 'build'
     projects: $(azureFunctionApp)
-    arguments: '-v minimal -c $(buildConfiguration) --no-restore'
+    arguments: '--output $(System.DefaultWorkingDirectory)/publish_output -v minimal -c $(buildConfiguration) --no-restore'
 
-- task: DotNetCoreCLI@2
+- task: ArchiveFiles@2
   inputs:
-    command: 'publish'
-    projects: '$(azureFunctionApp)'
-    arguments: '-v minimal -c $(buildConfiguration) --no-restore --output $(Build.ArtifactStagingDirectory)'
+    rootFolderOrFile: '$(System.DefaultWorkingDirectory)/publish_output'
+    includeRootFolder: true
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+    replaceExistingArchive: true
 
 - task: PublishBuildArtifacts@1
   inputs:
