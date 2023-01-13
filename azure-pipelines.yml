@@ -1,0 +1,53 @@
+# ASP.NET Core (.NET Framework)
+# Build and test ASP.NET Core projects targeting the full .NET Framework.
+# Add steps that publish symbols, save build artifacts, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
+
+trigger:
+  branches:
+        include: 
+        - qa
+        - dev
+        - master
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  azureFunctionApp: '**/GreenSheetCreator.csproj'
+  buildPlatform: 'Any CPU'
+
+steps:
+- task: NuGetToolInstaller@1
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'restore'
+    projects: $(azureFunctionApp)
+    feedsToUse: 'config'
+    nugetConfigPath: './nuget.config'
+    noCache: true
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'build'
+    projects: $(azureFunctionApp)
+    arguments: '-v minimal -c $(buildConfiguration) --no-restore'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'publish'
+    publishWebProjects: True
+    projects: '$(azureFunctionApp)'
+    arguments: '-v minimal -c $(buildConfiguration) --no-restore --output $(Build.ArtifactStagingDirectory)'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'greensheet_function_app'
+    publishLocation: 'Container'
+# TODO: Uncomment test command when tests exist
+#- task: DotNetCoreCLI@2
+#  inputs:
+#    command: 'test'
+#   projects: $(testProjectsVariableHere)
