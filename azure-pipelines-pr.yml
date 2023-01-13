@@ -25,13 +25,13 @@ steps:
     nugetConfigPath: './nuget.config'
     noCache: true
 
-- task: SonarCloudPrepare@1
-  inputs:
-    SonarCloud: 'SonarCloud'
-    organization: 'devteam-nebraskabook-org'
-    scannerMode: 'MSBuild'
-    projectKey: 'NebraskaBook_MMSProject'
-    projectName: 'MMS'
+# - task: SonarCloudPrepare@1
+#   inputs:
+#     SonarCloud: 'SonarCloud'
+#     organization: 'devteam-nebraskabook-org'
+#     scannerMode: 'MSBuild'
+#     projectKey: 'NebraskaBook_MMSProject'
+#     projectName: 'MMS'
 
 - task: DotNetCoreCLI@2
   inputs:
@@ -40,14 +40,14 @@ steps:
     arguments: '-v minimal -c $(buildConfiguration) --no-restore'
 
 # Run Code Analysis task
-- task: SonarCloudAnalyze@1
+# - task: SonarCloudAnalyze@1
 
-# Publish Quality Gate Result task
-- task: SonarCloudPublish@1
-  inputs:
-    pollingTimeoutSec: '300'
+# # Publish Quality Gate Result task
+# - task: SonarCloudPublish@1
+#   inputs:
+#     pollingTimeoutSec: '300'
 
-- task: sonarcloud-buildbreaker@2
-  inputs:
-    SonarCloud: 'SonarCloud'
-    organization: 'devteam-nebraskabook-org'
+# - task: sonarcloud-buildbreaker@2
+#   inputs:
+#     SonarCloud: 'SonarCloud'
+#     organization: 'devteam-nebraskabook-org'
