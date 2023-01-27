@@ -14,7 +14,7 @@ using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 using Azure.Storage.Blobs;
 using System;
-
+using Azure.Storage.Sas;
 
 namespace GreenSheetCreator
 {
@@ -142,10 +142,15 @@ namespace GreenSheetCreator
 
             //document.Save("C:\\GreenSheetTest\\GreenSheetTest.pdf");
 
+            DateTimeOffset offset = new DateTimeOffset();
+            offset.AddMinutes(10); 
+            BlobSasBuilder temp = new BlobSasBuilder(BlobSasPermissions.Read, offset);
+            temp.ExpiresOn = DateTime.Now.AddDays(10);
+            var returnUri = blob.GenerateSasUri(temp);
 
             string responseMessage = string.IsNullOrEmpty(fileName)
                 ? "This HTTP triggered function executed successfully."
-                : fileName;
+                : returnUri.ToString();
                 
 
             return new OkObjectResult(responseMessage);
