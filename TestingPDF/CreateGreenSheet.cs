@@ -27,7 +27,6 @@ namespace GreenSheetCreator
             _logger = log;
             
         }
-
         [FunctionName("GreenSheetCreate")]
         [OpenApiOperation(operationId: "Run", tags: new[] { "GreenSheetCreate" })]
         [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Query)]
@@ -94,39 +93,49 @@ namespace GreenSheetCreator
             PdfDocument document = new PdfDocument();
             PdfPage page = document.AddPage();
             XGraphics gfx = XGraphics.FromPdfPage(page);
-            XFont font = new XFont("Arial", 18);
+            XFont font = new XFont("Arial", 12,XFontStyle.Bold);
             XFont fontSmall = new XFont("Arial", 8);
+            XFont fontMedBold = new XFont("Arial", 18, XFontStyle.Bold);
+            XFont fontShimBold = new XFont("Arial", 65, XFontStyle.Bold);
             XFont fontBold = new XFont("Arial", 70, XFontStyle.Bold);
-            XFont fontBoldSmall = new XFont("Arial", 18, XFontStyle.Bold);
+            XFont fontShipLarge = new XFont("Arial", 175, XFontStyle.Bold);
 
-            XFont BarcodeFont = new XFont("fre3of9x", 60);
+            XFont BarcodeFont = new XFont("fre3of9x", 50);
 
-            
+            XImage NBCLogo = XImage.FromFile("Logo/NBCLogo.png");
 
-            gfx.DrawString(shipmentType, fontBold, XBrushes.Black, new XPoint(475, 70));
+            gfx.DrawImage(NBCLogo, 20, 20, 85, 85);
 
-            gfx.DrawString("Date: ___________________", font, XBrushes.Black, new XPoint(125, 35));
-            gfx.DrawString("Primary Table #: ___________________", font, XBrushes.Black, new XPoint(40, 70));
-            gfx.DrawString("Start Time: ___________________", font, XBrushes.Black, new XPoint(85, 105));
-            gfx.DrawString("End Time: ___________________", font, XBrushes.Black, new XPoint(90, 140));
-            gfx.DrawString("Team: _______ - _______ - _______ - _______", font, XBrushes.Black, new XPoint(118, 175));
-            gfx.DrawString("Junk: #_______(?)  NIF: #_______ = $_______", font, XBrushes.Black, new XPoint(124, 210));
+            gfx.DrawString("Date: _____________________________", font, XBrushes.Black, new XPoint(325, 45));
+            gfx.DrawString("Primary Table #: ___________________", font, XBrushes.Black, new XPoint(325, 85));
+            gfx.DrawString("Start Time: _______________________", font, XBrushes.Black, new XPoint(325, 120));
+            gfx.DrawString("End Time: _________________________", font, XBrushes.Black, new XPoint(325, 155));
+            gfx.DrawString("Team:_______-_______-_______-______", font, XBrushes.Black, new XPoint(325, 190));
+            gfx.DrawString("Junk: #___________ NOS: #___________", font, XBrushes.Black, new XPoint(325, 225));
 
-            gfx.DrawString("ACCT: " + accountNumber, font, XBrushes.Black, new XPoint(40, 275));
-            gfx.DrawString(accountName, fontSmall, XBrushes.Black, new XPoint(40, 285));
-            gfx.DrawString(accountAddress, fontSmall, XBrushes.Black, new XPoint(40, 295));
-            gfx.DrawString(accountCity + "," + " " + accountState + " " + accountZip, fontSmall, XBrushes.Black, new XPoint(40, 305));
+            gfx.DrawString("*" + shipmentNumber + shipmentType + partNumber + "*", BarcodeFont, XBrushes.Black, new XPoint(330, 285));
+
+            gfx.DrawString("NOTES:", fontMedBold, XBrushes.Black, new XPoint(325, 320));
+
+            gfx.DrawString(shipmentType, fontShipLarge, XBrushes.Black, new XPoint(15, 600));
+            gfx.DrawString(shipmentTypeName, fontMedBold, XBrushes.Black, new XPoint(80, 630));
+            gfx.DrawString(shipmentNumber, fontShimBold, XBrushes.Black, new XPoint(20, 715));
+
+            gfx.DrawString("ACCT: " + accountNumber, fontMedBold, XBrushes.Black, new XPoint(300, 575));
+            gfx.DrawString(accountName, font, XBrushes.Black, new XPoint(300, 590));
+            gfx.DrawString(accountAddress, font, XBrushes.Black, new XPoint(300, 602));
+            gfx.DrawString(accountCity + "," + " " + accountState + " " + accountZip, font, XBrushes.Black, new XPoint(300, 614));
 
 
-            gfx.DrawString("RCVD: " + recivedDate + " " + creatorInitials, font, XBrushes.Black,new XPoint(350, 275));
-            gfx.DrawString("SHIPMENT P/T: " + shipmentNumber + " " + partNumber, font, XBrushes.Black, new XPoint(350, 290));
-            gfx.DrawString("SHIPPER: " + shipper, font, XBrushes.Black, new XPoint(350, 305));
-            gfx.DrawString(pallets + " PALLETS", font, XBrushes.Black, new XPoint(350, 320));
-            gfx.DrawString(cartons + " CARTONS", font, XBrushes.Black, new XPoint(350, 335));
+            gfx.DrawString("RCVD: " + recivedDate + " " + creatorInitials, fontMedBold, XBrushes.Black, new XPoint(360, 650));
+            gfx.DrawString("SHIPMENT P/T: " + shipmentNumber + " " + partNumber, fontMedBold, XBrushes.Black, new XPoint(360, 670));
+            gfx.DrawString("SHIPPER: " + shipper, fontMedBold, XBrushes.Black, new XPoint(360, 690));
+            gfx.DrawString(pallets + " PALLETS", fontMedBold, XBrushes.Black, new XPoint(360, 710));
+            gfx.DrawString(cartons + " CARTONS", fontMedBold, XBrushes.Black, new XPoint(360, 730));
 
-            gfx.DrawString("*" + shipmentNumber + "*", BarcodeFont, XBrushes.Black, new XPoint(40, 500));
-            gfx.DrawString(shipmentNumber , font, XBrushes.Black, new XPoint(120, 520));
-            gfx.DrawString("NOTES:", font, XBrushes.Black, new XPoint(40, 570));
+
+            //gfx.DrawString(shipmentNumber , font, XBrushes.Black, new XPoint(120, 520));
+
 
             string dateNow = DateTime.Now.ToString("yyyyMMddHHmmss");
             string fileName = dateNow + "_" + shipmentNumber + ".pdf";
